@@ -1,0 +1,27 @@
+### Get all products
+Get http://localhost:5050/api/product
+
+### Get Product
+Get http://localhost:5050/api/product/1
+
+### Create Product
+POST http://localhost:5050/api/product
+Content-Type: application/json
+
+{
+  "title": "bahi",
+  "description": "Egyption Rice.",
+  "price": 5
+}
+
+### Update Product
+PATCH http://localhost:5050/api/product/2
+Content-Type: application/json
+
+{
+  "title": "Orange"
+}
+
+### Delete Product
+DELETE http://localhost:5050/api/product/4
+
