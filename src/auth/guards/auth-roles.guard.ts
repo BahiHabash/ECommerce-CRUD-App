@@ -29,7 +29,7 @@ export class AuthRolesGuard implements CanActivate {
 
     if (!roles?.length) return false;
 
-    const request: Request = context.switchToHttp().getRequest();
+    const request: Request = context.switchToHttp().getRequest<Request>();
     const token = this.extractTokenFromHeader(request);
 
     if (!token) {
@@ -38,23 +38,25 @@ export class AuthRolesGuard implements CanActivate {
       );
     }
 
+    let payload: JWTPayloadType;
+
     try {
-      const payload: JWTPayloadType = await this.jwtService.verifyAsync(token, {
+      payload = await this.jwtService.verifyAsync(token, {
         secret: this.config.get<string>('JWT_SECRET'),
       });
-
-      if (!roles.includes(payload.type)) {
-        throw new ForbiddenException(
-          'Insufficient permissions. You do not have access to this resource.',
-        );
-      }
-
-      request[CURRENT_USER_KEY] = payload;
     } catch {
       throw new UnauthorizedException(
         'Invalid or expired token. Please log in again.',
       );
     }
+
+    if (!roles.includes(payload.type)) {
+      throw new ForbiddenException(
+        'Insufficient permissions. You do not have access to this resource.',
+      );
+    }
+
+    request[CURRENT_USER_KEY] = payload;
 
     return true;
   }
