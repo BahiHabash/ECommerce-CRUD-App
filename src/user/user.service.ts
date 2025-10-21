@@ -28,7 +28,7 @@ export class UserService {
   }
 
   /**
-   * Get The Current Loggedd-in User
+   * Get User by ID
    * @param id userId of current user
    * @returns the current logged-in user from the database
    */

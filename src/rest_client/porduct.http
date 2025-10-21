@@ -2,7 +2,7 @@
 Get http://localhost:5050/api/product
 
 ### Get Product
-Get http://localhost:5050/api/product/1
+Get http://localhost:5050/api/product/7
 
 ### Create Product
 POST http://localhost:5050/api/product

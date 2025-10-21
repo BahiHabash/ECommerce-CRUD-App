@@ -12,7 +12,7 @@ import {
 import { UserService } from './user.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import type { JWTPayloadType } from 'src/utils/types';
-import { CurrentUser } from './decorators/current-user.decorator';
+import { UserPayload } from './decorators/user-payload.decorator';
 import { Roles } from './decorators/user-role.decorator';
 import { UserType } from 'src/utils/enums';
 import { AuthRolesGuard } from '../auth/guards/auth-roles.guard';
@@ -25,7 +25,7 @@ export class UserController {
 
   @Get('current-user')
   @UseGuards(AuthGuard)
-  getCurrentUser(@CurrentUser() userPayload: JWTPayloadType) {
+  getCurrentUser(@UserPayload() userPayload: JWTPayloadType) {
     return this.userService.getOne(userPayload.userId);
   }
 
@@ -41,7 +41,7 @@ export class UserController {
   @UseGuards(AuthGuard)
   updateUser(
     @Body() body: UpdateUserDto,
-    @CurrentUser() userPayload: JWTPayloadType,
+    @UserPayload() userPayload: JWTPayloadType,
   ) {
     return this.userService.update(userPayload.userId, body);
   }
@@ -50,7 +50,7 @@ export class UserController {
   @UseGuards(AuthGuard)
   deleteUser(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() userPayload: JWTPayloadType,
+    @UserPayload() userPayload: JWTPayloadType,
   ) {
     return this.userService.delete(id, userPayload);
   }

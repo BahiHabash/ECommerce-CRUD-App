@@ -7,18 +7,29 @@ import {
   Patch,
   Delete,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { CreateProductDto } from './dtos/create-product.dto';
 import { UpdateProductDto } from './dtos/update-product.dto';
 import { ProductService } from './product.service';
+import { AuthRolesGuard } from 'src/auth/guards/auth-roles.guard';
+import { Roles } from 'src/user/decorators/user-role.decorator';
+import { UserType } from 'src/utils/enums';
+import { UserPayload } from 'src/user/decorators/user-payload.decorator';
+import type { JWTPayloadType } from 'src/utils/types';
 
 @Controller('api/product')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Post()
-  public createProduct(@Body() body: CreateProductDto) {
-    return this.productService.createOne(body);
+  @Roles(UserType.ADMIN)
+  @UseGuards(AuthRolesGuard)
+  public createProduct(
+    @Body() body: CreateProductDto,
+    @UserPayload() payload: JWTPayloadType,
+  ) {
+    return this.productService.createOne(body, payload.userId);
   }
 
   @Get()
@@ -32,6 +43,8 @@ export class ProductController {
   }
 
   @Patch(':id')
+  @Roles(UserType.ADMIN)
+  @UseGuards(AuthRolesGuard)
   public updateProduct(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateProductDto,
@@ -40,6 +53,8 @@ export class ProductController {
   }
 
   @Delete(':id')
+  @Roles(UserType.ADMIN)
+  @UseGuards(AuthRolesGuard)
   public deleteProduct(@Param('id', ParseIntPipe) id: number) {
     return this.productService.deleteOne(id);
   }
