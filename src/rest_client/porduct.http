@@ -1,8 +1,8 @@
 ### Get all products
-Get http://localhost:5050/api/product
+Get http://localhost:5050/api/product?title=rice&price=5
 
 ### Get Product
-Get http://localhost:5050/api/product/7
+Get http://localhost:5050/api/product/8
 
 ### Create Product
 POST http://localhost:5050/api/product

@@ -6,10 +6,10 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
-import { CURRENT_TIMESTAMP } from '../utils/constant';
+import { CURRENT_TIMESTAMP } from '../common/utils/constant';
 import { Product } from '../product/product.entity';
 import { Review } from '../review/review.entity';
-import { UserType } from 'src/utils/enums';
+import { UserType } from 'src/common/utils/enums';
 import { Exclude } from 'class-transformer';
 
 @Entity({ name: 'users' })

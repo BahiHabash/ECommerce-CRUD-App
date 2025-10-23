@@ -4,8 +4,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { LoginDto } from 'src/auth/dtos/login.dot';
 import { RegisterDto } from 'src/auth/dtos/register.dto';
 import { User } from 'src/user/user.entity';
-import { PASSWORD_HASH_SALT_ROUNDS } from 'src/utils/constant';
-import { AccessTokenType, JWTPayloadType } from 'src/utils/types';
+import { PASSWORD_HASH_SALT_ROUNDS } from 'src/common/utils/constant';
+import { AccessTokenType, JWTPayloadType } from 'src/common/utils/types';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 

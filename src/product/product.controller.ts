@@ -14,9 +14,9 @@ import { UpdateProductDto } from './dtos/update-product.dto';
 import { ProductService } from './product.service';
 import { AuthRolesGuard } from 'src/auth/guards/auth-roles.guard';
 import { Roles } from 'src/user/decorators/user-role.decorator';
-import { UserType } from 'src/utils/enums';
+import { UserType } from 'src/common/utils/enums';
 import { UserPayload } from 'src/user/decorators/user-payload.decorator';
-import type { JWTPayloadType } from 'src/utils/types';
+import type { JWTPayloadType } from 'src/common/utils/types';
 
 @Controller('api/product')
 export class ProductController {

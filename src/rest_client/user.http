@@ -2,25 +2,6 @@
 GET http://localhost:5050/api/user
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsInR5cGUiOiJub3JtYWxfdXNlciIsImlhdCI6MTc2MDc1NTQ1MCwiZXhwIjoxNzYwODQxODUwfQ.KVXPfzzMjdcZkqx6_FMo9qW-yl0HCe72L7e-GUXVAXM
 
-### Register User
-POST http://localhost:5050/api/user/auth/register
-Content-Type: application/json
-
-{
-  "email": "bahi.3@gmail.com",
-  "password": "pass1234",
-  "username": "bahi_3"
-}
-
-### Login User
-POST http://localhost:5050/api/user/auth/login
-Content-Type: application/json
-
-{
-  "email": "user@gmail.com",
-  "password": "pass1234"
-}
-
-### Login User
-Get http://localhost:5050/api/user/auth/current-user
+### Get Current User
+Get http://localhost:5050/api/auth/current-user
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsInR5cGUiOiJub3JtYWxfdXNlciIsImlhdCI6MTc2MDY2MDEzNSwiZXhwIjoxNzYwNzQ2NTM1fQ.AjIdB3xtrG6q8BT6zhihP3KQq0XdY4BnUF5bG7VYZZ0

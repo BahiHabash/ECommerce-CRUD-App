@@ -1,2 +1,30 @@
-### Get Product
+### Create Product
+Post http://localhost:5050/api/review/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEwLCJ0eXBlIjoibm9ybWFsX3VzZXIiLCJpYXQiOjE3NjExODc4MjcsImV4cCI6MTc2MTI3NDIyN30.N9tczVpW7ilWw0ehXRh0urFLQ0qONOulbkKib2rgzTE
+Content-Type: application/json
+
+{
+  "rating": 5,
+  "comment": "increadable"
+}
+
+### Get all reviews
 Get http://localhost:5050/api/review
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEwLCJ0eXBlIjoibm9ybWFsX3VzZXIiLCJpYXQiOjE3NjExODc4MjcsImV4cCI6MTc2MTI3NDIyN30.N9tczVpW7ilWw0ehXRh0urFLQ0qONOulbkKib2rgzTE
+
+### Get one reviews
+Get http://localhost:5050/api/review/6
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEwLCJ0eXBlIjoibm9ybWFsX3VzZXIiLCJpYXQiOjE3NjExODc4MjcsImV4cCI6MTc2MTI3NDIyN30.N9tczVpW7ilWw0ehXRh0urFLQ0qONOulbkKib2rgzTE
+
+### Update Product
+Patch http://localhost:5050/api/review/7
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEwLCJ0eXBlIjoibm9ybWFsX3VzZXIiLCJpYXQiOjE3NjExODc4MjcsImV4cCI6MTc2MTI3NDIyN30.N9tczVpW7ilWw0ehXRh0urFLQ0qONOulbkKib2rgzTE
+Content-Type: application/json
+
+{
+  "rating": 4
+}
+
+### Delete Product
+Delete http://localhost:5050/api/review/8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjksInR5cGUiOiJhZG1pbiIsImlhdCI6MTc2MTE5Njk3OSwiZXhwIjoxNzYxMjgzMzc5fQ.vwZaSX2gIJRJpOjiHSJOAoewiBswLD659YybihCOpug

@@ -1,5 +1,8 @@
 import { IsEmail, IsNotEmpty, IsString, Length } from 'class-validator';
-import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from 'src/utils/constant';
+import {
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+} from 'src/common/utils/constant';
 
 export class LoginDto {
   @IsEmail()

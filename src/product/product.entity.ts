@@ -7,7 +7,7 @@ import {
   OneToMany,
   ManyToOne,
 } from 'typeorm';
-import { CURRENT_TIMESTAMP } from '../utils/constant';
+import { CURRENT_TIMESTAMP } from '../common/utils/constant';
 import { Review } from '../review/review.entity';
 import { User } from '../user/user.entity';
 

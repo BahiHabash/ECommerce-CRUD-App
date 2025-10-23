@@ -38,6 +38,7 @@ export class ProductService {
 
   /**
    * Get All Products
+   * @param queryObj Query to filter product with
    * @returns All Product Stored in the DB
    */
   public async getAll(): Promise<Product[]> {

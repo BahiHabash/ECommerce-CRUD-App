@@ -6,10 +6,10 @@ import {
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { JWTPayloadType } from 'src/utils/types';
+import { JWTPayloadType } from 'src/common/utils/types';
 import type { UpdateUserDto } from './dtos/update-user.dto';
-import { UserType } from 'src/utils/enums';
-import { PASSWORD_HASH_SALT_ROUNDS } from 'src/utils/constant';
+import { UserType } from 'src/common/utils/enums';
+import { PASSWORD_HASH_SALT_ROUNDS } from 'src/common/utils/constant';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()

@@ -1,5 +1,8 @@
 import { IsNotEmpty, Length, IsString, IsOptional } from 'class-validator';
-import { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from 'src/utils/constant';
+import {
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_MAX_LENGTH,
+} from 'src/common/utils/constant';
 
 export class UpdateUserDto {
   @IsOptional()

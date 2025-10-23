@@ -11,13 +11,13 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
-import type { JWTPayloadType } from 'src/utils/types';
+import type { JWTPayloadType } from 'src/common/utils/types';
 import { UserPayload } from './decorators/user-payload.decorator';
 import { Roles } from './decorators/user-role.decorator';
-import { UserType } from 'src/utils/enums';
+import { UserType } from 'src/common/utils/enums';
 import { AuthRolesGuard } from '../auth/guards/auth-roles.guard';
 import { UpdateUserDto } from './dtos/update-user.dto';
-import { LoggerInterceptor } from 'src/utils/interceptors/logger.interceptor';
+import { LoggerInterceptor } from 'src/common/utils/interceptors/logger.interceptor';
 
 @Controller('api/user')
 export class UserController {
