@@ -78,8 +78,11 @@ export class UserService {
         'You are not allowed to perform that action',
       );
 
-    await this.userRepository.delete({
-      id,
-    });
+    const user: User = await this.getOne(payload.userId);
+
+    if (!user)
+      throw new NotFoundException(`User with id: ${payload.userId} not found`);
+
+    await this.userRepository.remove(user);
   }
 }

@@ -1,9 +1,9 @@
 import {
+  ForbiddenException,
   forwardRef,
   Inject,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Review } from './review.entity';
@@ -60,7 +60,7 @@ export class ReviewService {
   /**
    * Get a Review
    * @param id id of target review
-   * @returns All Reviews Stored in the db
+   * @returns a target review with the corresponding id
    */
   async getOne(id: number): Promise<Review> {
     const review = await this.reviewRepository.findOne({
@@ -90,8 +90,8 @@ export class ReviewService {
     const review: Review = await this.getOne(reviewId);
 
     if (userId !== review?.user?.id) {
-      throw new UnauthorizedException(
-        `user with id ${userId} is not authorized to update that reveiw.`,
+      throw new ForbiddenException(
+        `Access Denied, user with id ${userId} isn't allowed to update that reveiw.`,
       );
     }
     let newReview: Review = this.reviewRepository.merge(review, newReviewDto);
@@ -102,10 +102,9 @@ export class ReviewService {
   }
 
   /**
-   * Update a review
-   * @param reviewId id of the review to be updated
-   * @param userId id of the user trying to update the review
-   * @returns Then new updated Review
+   * Delete a review
+   * @param reviewId id of the review to be deleted
+   * @param userPayload payload of the current logged-in user
    */
   async delete(reviewId: number, userPayload: JWTPayloadType): Promise<void> {
     const review: Review = await this.getOne(reviewId);
@@ -114,8 +113,8 @@ export class ReviewService {
       userPayload.type !== UserType.ADMIN &&
       userPayload.userId !== review?.user?.id
     ) {
-      throw new UnauthorizedException(
-        `This User is not authorized to update that reveiw.`,
+      throw new ForbiddenException(
+        `User with id: ${userPayload.userId} is not allowed to update that reveiw.`,
       );
     }
 
