@@ -58,21 +58,21 @@ export class UserService {
 
   /**
    * Delete Current user
-   * @param id id of the user to be deleted
+   * @param targetUserId id of the user to be deleted
    * @paylaod jwt-payload of the current logged-in user
    * @returns void
    */
-  async delete(id: number, payload: JWTPayloadType): Promise<void> {
+  async delete(targetUserId: number, payload: JWTPayloadType): Promise<void> {
     // if the normal user tying to delete others
-    if (payload.role !== UserRoleEnum.ADMIN && payload.userId !== id)
+    if (payload.role !== UserRoleEnum.ADMIN && payload.userId !== targetUserId)
       throw new ForbiddenException(
         'You are not allowed to perform that action',
       );
 
-    const user: User = await this.getOne(payload.userId);
+    const user: User = await this.getOne(targetUserId);
 
     if (!user)
-      throw new NotFoundException(`User with id: ${payload.userId} not found`);
+      throw new NotFoundException(`User with id: ${targetUserId} not found`);
 
     await this.userRepository.remove(user);
   }

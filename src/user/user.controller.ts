@@ -37,6 +37,13 @@ export class UserController {
     return this.userService.getAll();
   }
 
+  @Get(':targetUserId')
+  @UseGuards(AuthGuard)
+  @UseInterceptors(LoggerInterceptor)
+  getUser(@Param('targetUserId', ParseIntPipe) targetUserId: number) {
+    return this.userService.getOne(targetUserId);
+  }
+
   @Patch()
   @UseGuards(AuthGuard)
   updateUser(
