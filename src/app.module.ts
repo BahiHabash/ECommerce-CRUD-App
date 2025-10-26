@@ -10,7 +10,7 @@ import { User } from './user/user.entity';
 import { Review } from './review/review.entity';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
-import { JwtGlobalModule } from './jwt/jwt-global.module';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -19,14 +19,19 @@ import { JwtGlobalModule } from './jwt/jwt-global.module';
       envFilePath: `.env.${process.env.NODE_ENV}`,
     }),
 
-    JwtGlobalModule,
-    AuthModule,
-    UserModule,
-    ReviewModule,
-    ProductModule,
+    JwtModule.registerAsync({
+      global: true,
+
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_ACCESS_SECRET'),
+        signOptions: {
+          expiresIn: configService.get('JWT_ACCESS_EXPIRES_IN'),
+        },
+      }),
+    }),
 
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
       inject: [ConfigService],
 
       useFactory(config: ConfigService) {
@@ -42,7 +47,13 @@ import { JwtGlobalModule } from './jwt/jwt-global.module';
         };
       },
     }),
+
+    AuthModule,
+    UserModule,
+    ReviewModule,
+    ProductModule,
   ],
+
   providers: [
     AppService,
     {
