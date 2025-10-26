@@ -51,7 +51,10 @@ export class User {
   })
   updatedAt: Date;
 
-  @UpdateDateColumn({
+  /**
+   * Its value is managed automatically by the UserSubscriber.
+   */
+  @Column({
     type: 'timestamp',
     default: () => CURRENT_TIMESTAMP,
   })

@@ -11,6 +11,7 @@ import { Review } from './review/review.entity';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
+import { UserSubscriber } from './subscriber/user.subscriber';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { JwtModule } from '@nestjs/jwt';
           host: config.get<string>('DB_HOST', 'localhost'),
           synchronize: process.env.NODE_ENV !== 'production', // true in Dev onllllly because it doesn't make migration
           entities: [User, Review, Product],
+          subscribers: [UserSubscriber],
         };
       },
     }),
