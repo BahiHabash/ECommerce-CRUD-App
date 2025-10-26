@@ -1,19 +1,21 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { Repository } from 'typeorm';
+import { User } from 'src/user/user.entity';
 import { LoginDto } from 'src/auth/dtos/login.dot';
 import { RegisterDto } from 'src/auth/dtos/register.dto';
-import { User } from 'src/user/user.entity';
 import { PASSWORD_HASH_SALT_ROUNDS } from 'src/common/utils/constant';
-import { AccessTokenType, JWTPayloadType } from 'src/common/utils/types';
-import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
+import { RefreshAccessTokenType, JWTPayloadType } from 'src/common/utils/types';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -22,7 +24,7 @@ export class AuthService {
    * @param registerDto data for creating new user
    * @returns JWT (access token)
    */
-  async register(registerDto: RegisterDto): Promise<AccessTokenType> {
+  async register(registerDto: RegisterDto): Promise<RefreshAccessTokenType> {
     const { password, ...userData } = registerDto;
 
     // 1. Check for existing user
@@ -47,13 +49,15 @@ export class AuthService {
 
     const jwtPayload: JWTPayloadType = {
       userId: savedUser.id,
-      type: savedUser.userType,
+      role: savedUser.role,
     };
 
     const accessToken = await this.genearteAccessToken(jwtPayload);
+    const refreshToken = await this.genearteRefreshToken(jwtPayload);
 
     return {
       accessToken,
+      refreshToken,
     };
   }
 
@@ -62,7 +66,7 @@ export class AuthService {
    * @param loginDto data for loging in user account
    * @returns JWT Access Token
    */
-  async login(loginDto: LoginDto): Promise<AccessTokenType> {
+  async login(loginDto: LoginDto): Promise<RefreshAccessTokenType> {
     const { email, password } = loginDto;
     const user: User | null = await this.userRepository.findOne({
       where: { email },
@@ -76,17 +80,30 @@ export class AuthService {
 
     const jwtPayload: JWTPayloadType = {
       userId: user.id,
-      type: user.userType,
+      role: user.role,
     };
 
     const accessToken = await this.genearteAccessToken(jwtPayload);
+    const refreshToken = await this.genearteRefreshToken(jwtPayload);
 
     return {
+      refreshToken,
       accessToken,
     };
   }
+
   private async genearteAccessToken(payload: JWTPayloadType): Promise<string> {
-    return this.jwtService.signAsync(payload);
+    return this.jwtService.signAsync(payload, {
+      secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+      expiresIn: this.configService.get('JWT_ACCESS_EXPIRES_IN'),
+    });
+  }
+
+  private async genearteRefreshToken(payload: JWTPayloadType): Promise<string> {
+    return this.jwtService.signAsync(payload, {
+      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+      expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN'),
+    });
   }
 
   /**

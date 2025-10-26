@@ -14,7 +14,7 @@ import { AuthGuard } from '../auth/guards/auth.guard';
 import type { JWTPayloadType } from 'src/common/utils/types';
 import { UserPayload } from './decorators/user-payload.decorator';
 import { Roles } from './decorators/user-role.decorator';
-import { UserType } from 'src/common/utils/enums';
+import { UserRoleEnum } from 'src/common/utils/enums';
 import { AuthRolesGuard } from '../auth/guards/auth-roles.guard';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { LoggerInterceptor } from 'src/common/utils/interceptors/logger.interceptor';
@@ -30,7 +30,7 @@ export class UserController {
   }
 
   @Get()
-  @Roles(UserType.ADMIN)
+  @Roles(UserRoleEnum.ADMIN)
   @UseGuards(AuthRolesGuard)
   @UseInterceptors(LoggerInterceptor)
   getAllUsers() {

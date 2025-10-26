@@ -13,7 +13,7 @@ import { Repository } from 'typeorm';
 import { CreateReviewDto } from './dtos/create-review.dto';
 import { UpdateReviewDto } from './dtos/update-review.dto';
 import type { JWTPayloadType } from 'src/common/utils/types';
-import { UserType } from 'src/common/utils/enums';
+import { UserRoleEnum } from 'src/common/utils/enums';
 
 @Injectable()
 export class ReviewService {
@@ -110,7 +110,7 @@ export class ReviewService {
     const review: Review = await this.getOne(reviewId);
 
     if (
-      userPayload.type !== UserType.ADMIN &&
+      userPayload.role !== UserRoleEnum.ADMIN &&
       userPayload.userId !== review?.user?.id
     ) {
       throw new ForbiddenException(

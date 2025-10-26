@@ -14,7 +14,7 @@ import { UpdateProductDto } from './dtos/update-product.dto';
 import { ProductService } from './product.service';
 import { AuthRolesGuard } from 'src/auth/guards/auth-roles.guard';
 import { Roles } from 'src/user/decorators/user-role.decorator';
-import { UserType } from 'src/common/utils/enums';
+import { UserRoleEnum } from 'src/common/utils/enums';
 import { UserPayload } from 'src/user/decorators/user-payload.decorator';
 import type { JWTPayloadType } from 'src/common/utils/types';
 
@@ -23,7 +23,7 @@ export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Post()
-  @Roles(UserType.ADMIN)
+  @Roles(UserRoleEnum.ADMIN)
   @UseGuards(AuthRolesGuard)
   public createProduct(
     @Body() body: CreateProductDto,
@@ -43,7 +43,7 @@ export class ProductController {
   }
 
   @Patch(':id')
-  @Roles(UserType.ADMIN)
+  @Roles(UserRoleEnum.ADMIN)
   @UseGuards(AuthRolesGuard)
   public updateProduct(
     @Param('id', ParseIntPipe) id: number,
@@ -53,7 +53,7 @@ export class ProductController {
   }
 
   @Delete(':id')
-  @Roles(UserType.ADMIN)
+  @Roles(UserRoleEnum.ADMIN)
   @UseGuards(AuthRolesGuard)
   public deleteProduct(@Param('id', ParseIntPipe) id: number) {
     return this.productService.deleteOne(id);

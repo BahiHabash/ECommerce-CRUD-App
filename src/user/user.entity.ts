@@ -9,7 +9,7 @@ import {
 import { CURRENT_TIMESTAMP } from '../common/utils/constant';
 import { Product } from '../product/product.entity';
 import { Review } from '../review/review.entity';
-import { UserType } from 'src/common/utils/enums';
+import { UserRoleEnum } from 'src/common/utils/enums';
 import { Exclude } from 'class-transformer';
 
 @Entity({ name: 'users' })
@@ -31,8 +31,12 @@ export class User {
   @Exclude()
   passwordHash: string;
 
-  @Column({ type: 'enum', enum: UserType, default: UserType.NORMAL_USER })
-  userType: UserType;
+  @Column({
+    type: 'enum',
+    enum: UserRoleEnum,
+    default: UserRoleEnum.NORMAL_USER,
+  })
+  role: UserRoleEnum;
 
   @Column({ default: false })
   isAccountVerified: boolean;
@@ -46,6 +50,12 @@ export class User {
     onUpdate: CURRENT_TIMESTAMP,
   })
   updatedAt: Date;
+
+  @UpdateDateColumn({
+    type: 'timestamp',
+    default: () => CURRENT_TIMESTAMP,
+  })
+  lastSecurityUpdate: Date;
 
   @OneToMany(() => Product, (product) => product.user)
   products: Product[];

@@ -11,7 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { JWTPayloadType } from 'src/common/utils/types';
 import { CURRENT_USER_KEY } from 'src/common/utils/constant';
 import { Reflector } from '@nestjs/core';
-import type { UserType } from 'src/common/utils/enums';
+import type { UserRoleEnum } from 'src/common/utils/enums';
 
 @Injectable()
 export class AuthRolesGuard implements CanActivate {
@@ -22,7 +22,7 @@ export class AuthRolesGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const roles: UserType[] = this.reflector.getAllAndOverride('roles', [
+    const roles: UserRoleEnum[] = this.reflector.getAllAndOverride('roles', [
       context.getHandler(),
       context.getClass(),
     ]);
@@ -42,7 +42,7 @@ export class AuthRolesGuard implements CanActivate {
 
     try {
       payload = await this.jwtService.verifyAsync(token, {
-        secret: this.config.get<string>('JWT_SECRET'),
+        secret: this.config.get<string>('JWT_ACCESS_SECRET'),
       });
     } catch {
       throw new UnauthorizedException(
@@ -50,7 +50,7 @@ export class AuthRolesGuard implements CanActivate {
       );
     }
 
-    if (!roles.includes(payload.type)) {
+    if (!roles.includes(payload.role)) {
       throw new ForbiddenException(
         'Insufficient permissions. You do not have access to this resource.',
       );

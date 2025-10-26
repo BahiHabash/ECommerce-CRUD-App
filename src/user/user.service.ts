@@ -8,9 +8,7 @@ import { User } from './user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JWTPayloadType } from 'src/common/utils/types';
 import type { UpdateUserDto } from './dtos/update-user.dto';
-import { UserType } from 'src/common/utils/enums';
-import { PASSWORD_HASH_SALT_ROUNDS } from 'src/common/utils/constant';
-import * as bcrypt from 'bcrypt';
+import { UserRoleEnum } from 'src/common/utils/enums';
 
 @Injectable()
 export class UserService {
@@ -55,13 +53,6 @@ export class UserService {
 
     if (!user) throw new NotFoundException(`User with id ${id} not found`);
 
-    if (dto.password) {
-      user.passwordHash = await bcrypt.hash(
-        dto.password,
-        PASSWORD_HASH_SALT_ROUNDS,
-      );
-    }
-
     return this.userRepository.save(user);
   }
 
@@ -73,7 +64,7 @@ export class UserService {
    */
   async delete(id: number, payload: JWTPayloadType): Promise<void> {
     // if the normal user tying to delete others
-    if (payload.type !== UserType.ADMIN && payload.userId !== id)
+    if (payload.role !== UserRoleEnum.ADMIN && payload.userId !== id)
       throw new ForbiddenException(
         'You are not allowed to perform that action',
       );
