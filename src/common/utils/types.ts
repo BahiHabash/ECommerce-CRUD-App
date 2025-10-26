@@ -7,7 +7,7 @@ export type JWTPayloadType = {
   iat?: number;
 };
 
-export type RefreshAccessTokenType = {
+export type AuthResponseDto = {
   refreshToken: string;
   accessToken: string;
 };
