@@ -17,17 +17,13 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({
-    type: 'varchar',
-    length: '250',
-    unique: true,
-  })
+  @Column({ type: 'varchar', length: '250', unique: true })
   email: string;
 
   @Column({ type: 'varchar', length: '150', nullable: true })
   username: string;
 
-  @Column()
+  @Column({ select: false })
   @Exclude()
   passwordHash: string;
 
@@ -38,8 +34,23 @@ export class User {
   })
   role: UserRoleEnum;
 
+  @Column({ type: 'varchar', nullable: true, default: null })
+  profileImage: string | null;
+
   @Column({ default: false })
   isAccountVerified: boolean;
+
+  /**
+   * Its value is managed automatically by the UserSubscriber.
+   */
+  @Column({ type: 'timestamp', default: () => CURRENT_TIMESTAMP })
+  lastSecurityUpdate: Date;
+
+  @OneToMany(() => Product, (product) => product.user)
+  products: Product[];
+
+  @OneToMany(() => Review, (review) => review.user)
+  reviews: Review[];
 
   @CreateDateColumn({ type: 'timestamp', default: () => CURRENT_TIMESTAMP })
   createdAt: Date;
@@ -50,19 +61,4 @@ export class User {
     onUpdate: CURRENT_TIMESTAMP,
   })
   updatedAt: Date;
-
-  /**
-   * Its value is managed automatically by the UserSubscriber.
-   */
-  @Column({
-    type: 'timestamp',
-    default: () => CURRENT_TIMESTAMP,
-  })
-  lastSecurityUpdate: Date;
-
-  @OneToMany(() => Product, (product) => product.user)
-  products: Product[];
-
-  @OneToMany(() => Review, (review) => review.user)
-  reviews: Review[];
 }

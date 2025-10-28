@@ -1,14 +1,20 @@
 import {
-  ForbiddenException,
   Injectable,
   NotFoundException,
+  ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { User } from './user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { join } from 'node:path';
+import { promises as fsPromises } from 'node:fs';
+import { User } from './user.entity';
+import { UserRoleEnum } from 'src/common/utils/enums';
 import { JWTPayloadType } from 'src/common/utils/types';
 import type { UpdateUserDto } from './dtos/update-user.dto';
-import { UserRoleEnum } from 'src/common/utils/enums';
+import type { Response } from 'express';
+import { existsSync as fsExistsSync } from 'node:fs';
+import { UPLOADS_FOLDER_USER_PROFILE } from 'src/common/utils/constant';
 
 @Injectable()
 export class UserService {
@@ -18,62 +24,171 @@ export class UserService {
   ) {}
 
   /**
-   * Get all users stored in the db
-   * @returns All users from the db
+   * Retrieve all users stored in the database.
+   *
+   * @returns A promise that resolves to an array of users.
    */
   async getAll(): Promise<User[]> {
     return await this.userRepository.find();
   }
 
   /**
-   * Get User by ID
-   * @param id userId of current user
-   * @returns the current logged-in user from the database
+   * Retrieve a single user by their unique identifier.
+   *
+   * @param id - The ID of the user to fetch.
+   * @throws NotFoundException if the user does not exist.
+   * @returns A promise that resolves to the user entity.
    */
   async getOne(id: number): Promise<User> {
-    // Get user from the DB
     const user = await this.userRepository.findOne({ where: { id } });
 
-    if (!user) throw new NotFoundException('This user not existed');
+    if (!user) throw new NotFoundException('User not found.');
 
     return user;
   }
 
   /**
-   * Update existed user data
-   * @param id userId of current user
-   * @param dto new user data
-   * @returns the updated user data
+   * Update the details of an existing user.
+   *
+   * @param id - The ID of the user to update.
+   * @param dto - The data transfer object containing updated user fields.
+   * @throws NotFoundException if the user does not exist.
+   * @returns A promise that resolves to the updated user entity.
    */
   async update(id: number, dto: UpdateUserDto): Promise<User> {
-    const user = await this.userRepository.preload({
-      id,
-      ...dto,
-    });
+    const user = await this.userRepository.preload({ id, ...dto });
 
-    if (!user) throw new NotFoundException(`User with id ${id} not found`);
+    if (!user) throw new NotFoundException(`User with ID ${id} not found.`);
 
-    return this.userRepository.save(user);
+    return await this.userRepository.save(user);
   }
 
   /**
-   * Delete Current user
-   * @param targetUserId id of the user to be deleted
-   * @paylaod jwt-payload of the current logged-in user
-   * @returns void
+   * Delete a user account.
+   *
+   * @param targetUserId - The ID of the user to delete.
+   * @param payload - The JWT payload of the currently authenticated user.
+   * @throws ForbiddenException if a non-admin user attempts to delete another user's account.
+   * @throws NotFoundException if the target user does not exist.
+   * @returns A promise that resolves when the user has been successfully deleted.
    */
   async delete(targetUserId: number, payload: JWTPayloadType): Promise<void> {
-    // if the normal user tying to delete others
-    if (payload.role !== UserRoleEnum.ADMIN && payload.userId !== targetUserId)
+    if (
+      payload.role !== UserRoleEnum.ADMIN &&
+      payload.userId !== targetUserId
+    ) {
       throw new ForbiddenException(
-        'You are not allowed to perform that action',
+        'You are not allowed to perform this action.',
       );
+    }
 
-    const user: User = await this.getOne(targetUserId);
+    const user = await this.getOne(targetUserId);
 
     if (!user)
-      throw new NotFoundException(`User with id: ${targetUserId} not found`);
+      throw new NotFoundException(`User with ID ${targetUserId} not found.`);
+
+    if (user.profileImage)
+      await this.removeProfileImageFromSystem(user.profileImage);
 
     await this.userRepository.remove(user);
+  }
+
+  /**
+   * Assign or replace the user's profile image.
+   *
+   * If the user already has a profile image, the old one will be deleted before saving the new image.
+   *
+   * @param userId - The ID of the current user.
+   * @param newProfileImage - The filename of the new profile image.
+   * @returns A promise that resolves to the updated user entity.
+   */
+  async setProfileImage(
+    userId: number,
+    newProfileImage: string,
+  ): Promise<User> {
+    const user = await this.getOne(userId);
+
+    if (user.profileImage) {
+      await this.removeProfileImage(userId);
+    }
+
+    user.profileImage = newProfileImage;
+
+    return await this.userRepository.save(user);
+  }
+
+  /**
+   * Get the user's profile image.
+   *
+   * If the user already has a profile image, the old one will be deleted before saving the new image.
+   *
+   * @param userId - The ID of the current user.
+   * @returns A promise that resolves to the updated user entity.
+   */
+  async getProfileImage(userId: number, res: Response) {
+    // if no target user id provided, get profile photo of the current user
+    const { profileImage } = await this.getOne(userId);
+
+    if (!profileImage) {
+      throw new NotFoundException('There is no profile image for that user');
+    }
+
+    const profileImagePath: string = join(
+      process.cwd(),
+      UPLOADS_FOLDER_USER_PROFILE,
+      profileImage,
+    );
+
+    if (!fsExistsSync(profileImagePath)) {
+      throw new NotFoundException('File not found');
+    }
+
+    return res.sendFile(profileImagePath);
+  }
+
+  /**
+   * Remove the user's profile image from both the database and the filesystem.
+   *
+   * @param userId - The ID of the current user.
+   * @param user - (Optional) A pre-fetched user entity to avoid redundant DB calls.
+   * @throws BadRequestException if the user has no profile image.
+   * @returns A promise that resolves to the updated user entity without a profile image.
+   */
+  async removeProfileImage(
+    userId: number,
+    user: User | undefined = undefined,
+  ): Promise<User> {
+    user = user ?? (await this.getOne(userId));
+
+    if (!user.profileImage) {
+      throw new BadRequestException('No profile image found for this user.');
+    }
+
+    await this.removeProfileImageFromSystem(user.profileImage);
+
+    user.profileImage = null;
+
+    return await this.userRepository.save(user);
+  }
+
+  /**
+   * Helper method that safely removes a user's profile image from the filesystem.
+   *
+   * @param imageName - The filename of the image to delete.
+   * @internal
+   */
+  private async removeProfileImageFromSystem(imageName: string): Promise<void> {
+    const imagePath = join(
+      process.cwd(),
+      UPLOADS_FOLDER_USER_PROFILE,
+      imageName,
+    );
+
+    try {
+      await fsPromises.unlink(imagePath);
+    } catch {
+      console.error(`Failed to delete file: ${imageName}`);
+      console.error(`File Path is: ${imagePath}`);
+    }
   }
 }

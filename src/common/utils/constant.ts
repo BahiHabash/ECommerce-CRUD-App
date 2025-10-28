@@ -7,3 +7,6 @@ export const CURRENT_USER_KEY = 'userPayload';
 
 // passowrd
 export const PASSWORD_HASH_SALT_ROUNDS = 10;
+
+// Profile Folder Uploading dest for user
+export const UPLOADS_FOLDER_USER_PROFILE: string = 'uploads/users/profile';

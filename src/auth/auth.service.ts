@@ -13,7 +13,7 @@ import { LoginDto } from 'src/auth/dtos/login.dto';
 import { RegisterDto } from 'src/auth/dtos/register.dto';
 import { PASSWORD_HASH_SALT_ROUNDS } from 'src/common/utils/constant';
 import { AuthResponseDto, JWTPayloadType } from 'src/common/utils/types';
-import { jwtTypeEnum, type UserRoleEnum } from 'src/common/utils/enums';
+import { jwtTypeEnum, UserRoleEnum } from 'src/common/utils/enums';
 import { UserService } from 'src/user/user.service';
 import { RefreshTokenDto } from './dtos/refresh.dto';
 
@@ -85,6 +85,7 @@ export class AuthService {
     const { email, password } = loginDto;
     const user: User | null = await this.userRepository.findOne({
       where: { email },
+      select: ['passwordHash', 'id', 'role'],
     });
 
     if (!user || !(await this.comparePassword(password, user.passwordHash)))

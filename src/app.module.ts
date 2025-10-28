@@ -12,6 +12,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
 import { UserSubscriber } from './subscriber/user.subscriber';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { UserSubscriber } from './subscriber/user.subscriber';
     UserModule,
     ReviewModule,
     ProductModule,
+    UploadsModule,
   ],
 
   providers: [
