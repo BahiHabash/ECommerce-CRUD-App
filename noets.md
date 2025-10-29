@@ -84,3 +84,8 @@ if failed then fetch from db
 if found return based on status
 
 whenever the db updated, updater the cache
+
+## Uploading Files
+
+import multerModule.register() in the module or
+user FileInterceptor(MulterOptions) in the controller

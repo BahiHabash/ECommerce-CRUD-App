@@ -12,8 +12,8 @@ import { ProductService } from 'src/product/product.service';
 import { Repository } from 'typeorm';
 import { CreateReviewDto } from './dtos/create-review.dto';
 import { UpdateReviewDto } from './dtos/update-review.dto';
-import type { JWTPayloadType } from 'src/common/utils/types';
-import { UserRoleEnum } from 'src/common/utils/enums';
+import type { JWTPayloadType } from 'src/utils/types';
+import { UserRoleEnum } from 'src/utils/enums';
 
 @Injectable()
 export class ReviewService {

@@ -6,7 +6,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { CURRENT_TIMESTAMP } from '../common/utils/constant';
+import { CURRENT_TIMESTAMP } from '../utils/constant';
 import { Product } from '../product/product.entity';
 import { User } from '../user/user.entity';
 

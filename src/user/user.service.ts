@@ -9,12 +9,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { join } from 'node:path';
 import { promises as fsPromises } from 'node:fs';
 import { User } from './user.entity';
-import { UserRoleEnum } from 'src/common/utils/enums';
-import { JWTPayloadType } from 'src/common/utils/types';
+import { UserRoleEnum } from 'src/utils/enums';
+import { JWTPayloadType } from 'src/utils/types';
 import type { UpdateUserDto } from './dtos/update-user.dto';
 import type { Response } from 'express';
 import { existsSync as fsExistsSync } from 'node:fs';
-import { UPLOADS_FOLDER_USER_PROFILE } from 'src/common/utils/constant';
+import { UPLOADS_FOLDER_USER_PROFILE } from 'src/utils/constant';
 
 @Injectable()
 export class UserService {

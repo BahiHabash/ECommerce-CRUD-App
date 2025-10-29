@@ -11,9 +11,9 @@ import { Repository } from 'typeorm';
 import { User } from 'src/user/user.entity';
 import { LoginDto } from 'src/auth/dtos/login.dto';
 import { RegisterDto } from 'src/auth/dtos/register.dto';
-import { PASSWORD_HASH_SALT_ROUNDS } from 'src/common/utils/constant';
-import { AuthResponseDto, JWTPayloadType } from 'src/common/utils/types';
-import { jwtTypeEnum, UserRoleEnum } from 'src/common/utils/enums';
+import { PASSWORD_HASH_SALT_ROUNDS } from 'src/utils/constant';
+import { AuthResponseDto, JWTPayloadType } from 'src/utils/types';
+import { jwtTypeEnum, UserRoleEnum } from 'src/utils/enums';
 import { UserService } from 'src/user/user.service';
 import { RefreshTokenDto } from './dtos/refresh.dto';
 

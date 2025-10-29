@@ -8,10 +8,10 @@ import {
 import { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { JWTPayloadType } from 'src/common/utils/types';
-import { CURRENT_USER_KEY } from 'src/common/utils/constant';
+import { JWTPayloadType } from 'src/utils/types';
+import { CURRENT_USER_KEY } from 'src/utils/constant';
 import { Reflector } from '@nestjs/core';
-import type { UserRoleEnum } from 'src/common/utils/enums';
+import type { UserRoleEnum } from 'src/utils/enums';
 
 @Injectable()
 export class AuthRolesGuard implements CanActivate {

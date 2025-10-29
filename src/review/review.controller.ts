@@ -16,7 +16,7 @@ import { UserPayload } from 'src/user/decorators/user-payload.decorator';
 import { CreateReviewDto } from './dtos/create-review.dto';
 import { UpdateReviewDto } from './dtos/update-review.dto';
 import { ReviewSerializeResponseInterceptor } from './interceptors/review-serialize-response.interceptor';
-import type { JWTPayloadType } from 'src/common/utils/types';
+import type { JWTPayloadType } from 'src/utils/types';
 
 @Controller('/api/review')
 export class ReviewController {

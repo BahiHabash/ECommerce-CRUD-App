@@ -8,67 +8,38 @@ import {
   Res,
   Get,
   NotFoundException,
+  UploadedFiles,
+  Delete,
+  ConflictException,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import type { Express, Response } from 'express';
-import { diskStorage } from 'multer';
-import { extname, join } from 'path';
-import fs from 'fs';
+import fs, { promises as fsPromises } from 'node:fs';
+import { join } from 'node:path';
 
 @Controller('api/uploads')
 export class UploadsController {
   @Post()
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './images',
-        filename: (req, file, cb) => {
-          // Validate file
-          if (!file.originalname) {
-            return cb(new BadRequestException('Invalid file'), '');
-          }
-
-          // Generate random suffix
-          const postfix = `${Math.round(Math.random() * 10 ** 6)}-${Date.now()}`;
-          const fileExt = extname(file.originalname);
-          const baseName = file.originalname
-            .replace(fileExt, '')
-            .replace(/\s+/g, '_');
-
-          const filename = `${baseName}-${postfix}${fileExt}`;
-          cb(null, filename);
-        },
-      }),
-      limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB max
-      },
-      fileFilter: (req, file, cb) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
-          return cb(
-            new BadRequestException('Only image files are allowed!'),
-            false,
-          );
-        }
-        cb(null, true);
-      },
-    }),
-  )
+  @UseInterceptors(FileInterceptor('file'))
   uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No file uploaded');
-
-    console.log('Uploaded file:', file);
-
+    console.log(file);
     return {
       message: 'File uploaded successfully',
       filename: file.filename,
-      path: `/images/${file.filename}`,
     };
   }
 
-  // @Get(':image')
-  // getUploadedFile(@Param('image') image: string, @Res() res: Response) {
-  //   return res.sendFile(image, { root: 'images' });
-  // }
+  @Post('multiple-files')
+  @UseInterceptors(FilesInterceptor('files'))
+  uploadMultipleFiles(@UploadedFiles() files: Array<Express.Multer.File>) {
+    if (!files?.length) throw new BadRequestException('No file uploaded');
+    console.log(files);
+    return {
+      message: 'Files uploaded successfully',
+      filesName: files.map((file) => file.filename),
+    };
+  }
 
   @Get(':imageName')
   getUploadedFile(@Param('imageName') imageName: string, @Res() res: Response) {
@@ -80,5 +51,21 @@ export class UploadsController {
     }
 
     return res.sendFile(filePath);
+  }
+
+  @Delete(':imageName')
+  async deleteUploadedFile(@Param('imageName') imageName: string) {
+    const imagePath = join(process.cwd(), 'images', imageName);
+
+    try {
+      await fsPromises.unlink(imagePath);
+    } catch {
+      console.error(
+        `Failed to delete file: ${imageName}, At Path: ${imagePath}`,
+      );
+      throw new ConflictException('Failed to delete that file');
+    }
+
+    return { message: 'File Deleted Successfully.' };
   }
 }
