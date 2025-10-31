@@ -16,6 +16,7 @@ import { AuthResponseDto, JWTPayloadType } from 'src/utils/types';
 import { jwtTypeEnum, UserRoleEnum } from 'src/utils/enums';
 import { UserService } from 'src/user/user.service';
 import { RefreshTokenDto } from './dtos/refresh.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 /**
  * Service responsible for handling all user authentication logic,
@@ -30,6 +31,7 @@ export class AuthService {
    * @param configService Injected ConfigService for accessing environment variables.
    * @param userService Injected UserService for user-related business logic.
    * @param jwtService Injected JwtService for creating and verifying JSON Web Tokens.
+   * @param eventEmitter Injected EventEmitter2 for listening for event and sending emails.
    */
   constructor(
     @InjectRepository(User)
@@ -37,6 +39,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -70,6 +73,9 @@ export class AuthService {
     // save user to DB
     const savedUser: User | null = await this.userRepository.save(newUser);
 
+    // fire event to (send email)
+    this.eventEmitter.emit('user.registered', newUser.email);
+
     return await this.generateRefreshAccessTokens(savedUser.id, savedUser.role);
   }
 
@@ -90,6 +96,9 @@ export class AuthService {
 
     if (!user || !(await this.comparePassword(password, user.passwordHash)))
       throw new BadRequestException('Invalid Email or Password or both.');
+
+    // Fire Event to (send email)
+    this.eventEmitter.emit('user.loggedin', email);
 
     return await this.generateRefreshAccessTokens(user.id, user.role);
   }

@@ -88,4 +88,5 @@ whenever the db updated, updater the cache
 ## Uploading Files
 
 import multerModule.register() in the module or
-user FileInterceptor(MulterOptions) in the controller
+user FileInterceptor(MulterOptions) in the controller or
+import it in the module and override it in the conroller (you have to override the entire options object).

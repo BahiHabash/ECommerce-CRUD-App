@@ -13,6 +13,8 @@ import { AuthModule } from './auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
 import { UserSubscriber } from './subscriber/user.subscriber';
 import { UploadsModule } from './uploads/uploads.module';
+import { MailModule } from './mail/mail.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
@@ -51,10 +53,12 @@ import { UploadsModule } from './uploads/uploads.module';
       },
     }),
 
+    EventEmitterModule.forRoot(),
     AuthModule,
     UserModule,
     ReviewModule,
     ProductModule,
+    MailModule,
     UploadsModule,
   ],
 
