@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -16,6 +17,11 @@ import { RefreshTokenDto } from './dtos/refresh.dto';
 import { AuthGuard } from './guards/auth.guard';
 import { UserPayload } from 'src/user/decorators/user-payload.decorator';
 import type { JWTPayloadType } from 'src/utils/types';
+import {
+  ForgetPasswordDto,
+  UpdatePasswordDto,
+  ResetPasswordDto,
+} from './dtos/password.dto';
 
 @Controller('api/auth')
 export class AuthController {
@@ -41,11 +47,42 @@ export class AuthController {
     return this.authService.verifyEmail(token);
   }
 
-  @UseGuards(AuthGuard)
   @Post('resend-email-verification')
+  @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
-  async resendVerificationEmail(@UserPayload() userPayload: JWTPayloadType) {
-    await this.authService.resendVerificationEmail(userPayload);
+  resendVerificationEmail(@UserPayload() userPayload: JWTPayloadType) {
+    return this.authService.resendVerificationEmail(userPayload);
+  }
+
+  @Patch('password')
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  updatePassword(
+    @UserPayload() userPayload: JWTPayloadType,
+    @Body() updatePasswordDto: UpdatePasswordDto,
+  ) {
+    return this.authService.updatePassword(
+      userPayload.userId,
+      updatePasswordDto,
+    );
+  }
+
+  @Post('password/forget')
+  @HttpCode(HttpStatus.OK)
+  forgetPassword(@Body() forgetPasswordDto: ForgetPasswordDto) {
+    return this.authService.forgetPassword(forgetPasswordDto.email);
+  }
+
+  @Post('password/reset') // 'password/reset?token=...'
+  @HttpCode(HttpStatus.OK)
+  resetPassword(
+    @Query('token') token: string,
+    @Body() resetPasswordDto: ResetPasswordDto,
+  ) {
+    if (!token) {
+      throw new BadRequestException('Invalid Token or URL');
+    }
+    return this.authService.resetPassword(token, resetPasswordDto);
   }
 
   @Post('refresh')

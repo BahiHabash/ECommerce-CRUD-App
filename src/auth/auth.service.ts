@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import {
   BadRequestException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { MoreThan, Repository } from 'typeorm';
@@ -19,7 +20,9 @@ import { RefreshTokenDto } from './dtos/refresh.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { randomBytes } from 'node:crypto';
 import { UserToken } from './user-token.entity';
+import { VERIFICATION_TOKEN_EXPIRES_IN } from 'src/utils/constant';
 import type { UserTokenDto } from './dtos/user-token.dto';
+import type { ResetPasswordDto, UpdatePasswordDto } from './dtos/password.dto';
 
 /**
  * Service responsible for handling all user authentication logic,
@@ -155,6 +158,142 @@ export class AuthService {
   }
 
   /**
+   * Allows a logged-in user to change their password by providing their old password.
+   * @param userId userId of the current loged-in user
+   * @param updatePasswordDto
+   */
+  async updatePassword(
+    userId: number,
+    updatePasswordDto: UpdatePasswordDto,
+  ): Promise<{ message: string }> {
+    // 1. Find the user and explicitly select the passwordHash
+    const { email, oldPassword, newPassword } = updatePasswordDto;
+    const user = await this.userRepo
+      .createQueryBuilder('user')
+      .addSelect('user.passwordHash')
+      .where('user.id = :id AND user.email = :email', {
+        id: userId,
+        email: email,
+      })
+      .getOne();
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // 2. Check if old password is correct
+    const isPasswordMatch = await this.comparePassword(
+      oldPassword,
+      user.passwordHash,
+    );
+
+    if (!isPasswordMatch) {
+      throw new BadRequestException('Incorrect old password.');
+    }
+
+    // 3. Hash and save new password
+    user.passwordHash = await this.hashPassword(newPassword); // subcriber will run
+    await this.userRepo.save(user);
+
+    return { message: 'Password changed successfully.' };
+  }
+
+  /**
+   * Finds a user by email and sends a password reset link.
+   *
+   * @param email the user email
+   * @returns {Promise<{ message: string }>} General Message Response
+   */
+  async forgetPassword(email: string): Promise<{ message: string }> {
+    const GENERAL_MESSAGE: string =
+      'If an account with this email exists, a password reset link has been sent.';
+    const user = await this.userRepo.findOne({ where: { email } });
+
+    // 1. If no user, just return success to prevent email enumeration
+    if (!user) {
+      return { message: GENERAL_MESSAGE };
+    }
+
+    // 2. Invalidate any old password reset tokens
+    await this.userTokenRepo.delete({
+      userId: user.id,
+      purpose: TokenPurpose.PASSWORD_RESET,
+    });
+
+    // 3. Generate new token and URL
+    const { url, token } = this.generateVerificationLink('password/reset');
+    const expiresAt = new Date(Date.now() + VERIFICATION_TOKEN_EXPIRES_IN);
+
+    // 4. Save the new token
+    const newUserToken = this.userTokenRepo.create({
+      token,
+      purpose: TokenPurpose.PASSWORD_RESET,
+      expiresAt,
+      userId: user.id,
+    });
+    await this.userTokenRepo.save(newUserToken);
+
+    // 5. Fire event to send email
+    this.eventEmitter.emit('auth.passwordResetRequest', {
+      url,
+      email: user.email,
+      username: user.username,
+    });
+
+    return { message: GENERAL_MESSAGE };
+  }
+
+  /**
+   * Verifies a password reset token, hashes the new password, and updates the user.
+   *
+   * Logs the user in by returning new tokens upon success.
+   * @param token reset-password-token that sent to his email
+   * @param resetPasswordDto (e.g: newPassword, newPasswordConfirm)
+   * @returns {Promise<RefreshAccessTokens>} object {refreshToken, accessToken}
+   */
+  async resetPassword(
+    token: string,
+    resetPasswordDto: ResetPasswordDto,
+  ): Promise<RefreshAccessTokens> {
+    const { newPassword, newPasswordConfirm } = resetPasswordDto;
+
+    // if new passwords don't match
+    if (newPassword !== newPasswordConfirm) {
+      throw new BadRequestException(
+        'newPassword and newPasswordConfirm do not matches',
+      );
+    }
+
+    // 1. Find the token
+    const userToken = await this.userTokenRepo.findOne({
+      where: {
+        token: token,
+        purpose: TokenPurpose.PASSWORD_RESET,
+        expiresAt: MoreThan(new Date()), // Check that it's not expired
+      },
+      relations: ['user'],
+    });
+
+    if (!userToken) {
+      throw new BadRequestException('Invalid or expired password reset token.');
+    }
+
+    // 2. Hash new password
+    const newPasswordHash = await this.hashPassword(newPassword);
+
+    // 3. Update user
+    const user = userToken.user;
+    user.passwordHash = newPasswordHash;
+    await this.userRepo.save(user);
+
+    // 4. Delete the single-use token
+    await this.userTokenRepo.remove(userToken);
+
+    // 5. Log the user in by issuing new tokens
+    return this.generateRefreshAccessTokens(user.id, user.role);
+  }
+
+  /**
    * Generates a new access token and a new rotated refresh token.
    * This method validates the provided refresh token, verifies the user still exists,
    * and then issues a fresh pair of tokens.
@@ -271,10 +410,7 @@ export class AuthService {
     const { url, token } = this.generateVerificationLink('verify-email');
 
     // Create and validate the UserToken DTO
-    const expiryTimeMs =
-      Number(this.configService.get<number>('VERIFICATION_TOKEN_EXPIRES_IN')) ||
-      15 * 60 * 1000; // 15 minutes
-    const expiresAt = new Date(Date.now() + expiryTimeMs);
+    const expiresAt = new Date(Date.now() + VERIFICATION_TOKEN_EXPIRES_IN);
     const userTokenDto: UserTokenDto = {
       token: token,
       purpose: TokenPurpose.EMAIL_VERIFICATION,
@@ -287,7 +423,7 @@ export class AuthService {
     await this.userTokenRepo.save(userToken);
 
     // 6. Fire event to (send email for verification)
-    this.eventEmitter.emit('user.verificationEmail', {
+    this.eventEmitter.emit('auth.verificationEmail', {
       url,
       email: user.email,
       username: user.username,

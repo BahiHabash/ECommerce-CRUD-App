@@ -1,6 +1,7 @@
 export const CURRENT_TIMESTAMP = 'CURRENT_TIMESTAMP(6)';
 export const PASSWORD_MIN_LENGTH = 6;
 export const PASSWORD_MAX_LENGTH = 150;
+export const VERIFICATION_TOKEN_EXPIRES_IN = 15 * 60 * 1000;
 
 // User Request
 export const CURRENT_USER_KEY = 'userPayload';
