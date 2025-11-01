@@ -1,13 +1,13 @@
-import type { UserRoleEnum } from './enums';
+import type { UserRole } from './enums';
 
 export type JWTPayloadType = {
   userId: number;
-  role: UserRoleEnum;
+  role: UserRole;
   exp?: number;
   iat?: number;
 };
 
-export type AuthResponseDto = {
+export type RefreshAccessTokens = {
   refreshToken: string;
   accessToken: string;
 };

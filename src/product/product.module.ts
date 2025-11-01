@@ -12,8 +12,8 @@ import { forwardRef } from '@nestjs/common';
   providers: [ProductService],
   imports: [
     TypeOrmModule.forFeature([Product]),
-    UserModule,
     forwardRef(() => ReviewModule),
+    UserModule,
   ],
   exports: [ProductService],
 })

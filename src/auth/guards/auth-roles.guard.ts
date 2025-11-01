@@ -11,7 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { JWTPayloadType } from 'src/utils/types';
 import { CURRENT_USER_KEY } from 'src/utils/constant';
 import { Reflector } from '@nestjs/core';
-import type { UserRoleEnum } from 'src/utils/enums';
+import type { UserRole } from 'src/utils/enums';
 
 @Injectable()
 export class AuthRolesGuard implements CanActivate {
@@ -22,7 +22,7 @@ export class AuthRolesGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const roles: UserRoleEnum[] = this.reflector.getAllAndOverride('roles', [
+    const roles: UserRole[] = this.reflector.getAllAndOverride('roles', [
       context.getHandler(),
       context.getClass(),
     ]);

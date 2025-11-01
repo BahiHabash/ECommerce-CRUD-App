@@ -11,7 +11,7 @@ import type { User } from 'src/user/user.entity';
 export class ProductService {
   constructor(
     @InjectRepository(Product)
-    private readonly productRepository: Repository<Product>,
+    private readonly productRepo: Repository<Product>,
     private readonly userService: UserService,
   ) {}
 
@@ -27,13 +27,13 @@ export class ProductService {
   ): Promise<Product> {
     const user: User = await this.userService.getOne(userId);
 
-    const newProduct = this.productRepository.create({
+    const newProduct = this.productRepo.create({
       ...createProductDto,
       title: createProductDto.title.toLowerCase(),
       user,
     });
 
-    return await this.productRepository.save(newProduct);
+    return await this.productRepo.save(newProduct);
   }
 
   /**
@@ -42,7 +42,7 @@ export class ProductService {
    * @returns All Product Stored in the DB
    */
   public async getAll(): Promise<Product[]> {
-    return await this.productRepository.find();
+    return await this.productRepo.find();
   }
 
   /**
@@ -51,7 +51,7 @@ export class ProductService {
    * @returns the target product
    */
   public async getOne(id: number): Promise<Product> {
-    const product = await this.productRepository.findOne({ where: { id } });
+    const product = await this.productRepo.findOne({ where: { id } });
 
     if (!product) {
       throw new NotFoundException(`Product with ID ${id} not found`);
@@ -70,18 +70,18 @@ export class ProductService {
     id: number,
     updateProductDto: UpdateProductDto,
   ): Promise<Product> {
-    const product = await this.productRepository.findOne({ where: { id } });
+    const product = await this.productRepo.findOne({ where: { id } });
 
     if (!product) {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
 
-    const updatedProduct: Product = this.productRepository.merge(
+    const updatedProduct: Product = this.productRepo.merge(
       product,
       updateProductDto,
     );
 
-    return await this.productRepository.save(updatedProduct);
+    return await this.productRepo.save(updatedProduct);
   }
 
   /**
@@ -89,7 +89,7 @@ export class ProductService {
    * @param id id of the target product
    */
   public async deleteOne(id: number): Promise<void> {
-    const result = await this.productRepository.delete(id);
+    const result = await this.productRepo.delete(id);
 
     if (result.affected === 0) {
       throw new NotFoundException(`Product with ID ${id} not found`);

@@ -6,8 +6,9 @@ Get http://localhost:5050/api/product/8
 
 ### Create Product
 POST http://localhost:5050/api/product
-Content-Type: application/json
+Authorization: Barear eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMzLCJyb2xlIjoiYWRtaW4iLCJqd3RUeXBlIjoiYWNjZXNzIiwiaWF0IjoxNzYxOTY3NDE4LCJleHAiOjE3NjE5NjgzMTh9.TAQuP0b4j8w9sQJe-a3H6OBgSPZqcyjNeYFiIQg-yUc
 
+Content-Type: application/json
 {
   "title": "bahi",
   "description": "Egyption Rice.",

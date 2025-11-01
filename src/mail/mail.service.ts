@@ -18,16 +18,23 @@ export class MailService {
     return true;
   }
 
-  async sendWelcomeMessage(email: string): Promise<boolean> {
+  async sendWelcomeMessage(
+    email: string,
+    username: string,
+    url: string,
+  ): Promise<boolean> {
+    // 5. Send the email
     await this.mailerService.sendMail({
       to: email,
-      from: this.configService.get<string>('EMAIL_SENDER'),
-      subject: 'Register Test',
+      from: this.configService.get<string>('EMAIL_FROM'),
+      subject: `Welcome to ECommerce! Please Verify Your Email`,
       template: './register-email.template.ejs',
       context: {
-        userName: email.split('@')[0],
+        username: username,
+        verificationUrl: url,
       },
     });
+
     return true;
   }
 }

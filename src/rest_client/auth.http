@@ -3,9 +3,9 @@ POST http://localhost:5050/api/auth/register
 Content-Type: application/json
 
 {
-  "email": "user.7@gmail.com",
+  "email": "admin.bahi.2@gmail.com",
   "password": "pass1234",
-  "username": "user_7"
+  "username": "Bahii Habash 2"
 }
 
 ### Login User
@@ -13,6 +13,6 @@ POST http://localhost:5050/api/auth/login
 Content-Type: application/json
 
 {
-  "email": "admin@google.com",
+  "email": "admin.bahi.2@gmail.com",
   "password": "pass1234"
 }

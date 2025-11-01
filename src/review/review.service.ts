@@ -13,13 +13,13 @@ import { Repository } from 'typeorm';
 import { CreateReviewDto } from './dtos/create-review.dto';
 import { UpdateReviewDto } from './dtos/update-review.dto';
 import type { JWTPayloadType } from 'src/utils/types';
-import { UserRoleEnum } from 'src/utils/enums';
+import { UserRole } from 'src/utils/enums';
 
 @Injectable()
 export class ReviewService {
   constructor(
     @InjectRepository(Review)
-    private readonly reviewRepository: Repository<Review>,
+    private readonly reviewRepo: Repository<Review>,
     private readonly userService: UserService,
 
     @Inject(forwardRef(() => ProductService))
@@ -38,13 +38,13 @@ export class ReviewService {
     body: CreateReviewDto,
     userId: number,
   ): Promise<Review> {
-    const review: Review = this.reviewRepository.create({
+    const review: Review = this.reviewRepo.create({
       ...body,
       user: await this.userService.getOne(userId),
       product: await this.productService.getOne(productId),
     });
 
-    return await this.reviewRepository.save(review);
+    return await this.reviewRepo.save(review);
   }
 
   /**
@@ -52,7 +52,7 @@ export class ReviewService {
    * @returns All Reviews Stored in the db
    */
   async getAll(): Promise<Review[]> {
-    return await this.reviewRepository.find({
+    return await this.reviewRepo.find({
       relations: { user: true, product: true },
     });
   }
@@ -63,7 +63,7 @@ export class ReviewService {
    * @returns a target review with the corresponding id
    */
   async getOne(id: number): Promise<Review> {
-    const review = await this.reviewRepository.findOne({
+    const review = await this.reviewRepo.findOne({
       where: { id },
       relations: { user: true, product: true },
     });
@@ -94,9 +94,9 @@ export class ReviewService {
         `Access Denied, user with id ${userId} isn't allowed to update that reveiw.`,
       );
     }
-    let newReview: Review = this.reviewRepository.merge(review, newReviewDto);
+    let newReview: Review = this.reviewRepo.merge(review, newReviewDto);
 
-    newReview = await this.reviewRepository.save(newReview);
+    newReview = await this.reviewRepo.save(newReview);
 
     return newReview;
   }
@@ -110,7 +110,7 @@ export class ReviewService {
     const review: Review = await this.getOne(reviewId);
 
     if (
-      userPayload.role !== UserRoleEnum.ADMIN &&
+      userPayload.role !== UserRole.ADMIN &&
       userPayload.userId !== review?.user?.id
     ) {
       throw new ForbiddenException(
@@ -118,6 +118,6 @@ export class ReviewService {
       );
     }
 
-    await this.reviewRepository.delete({ id: reviewId });
+    await this.reviewRepo.delete({ id: reviewId });
   }
 }

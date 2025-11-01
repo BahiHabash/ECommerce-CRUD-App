@@ -17,7 +17,7 @@ import { UserService } from './user.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { UserPayload } from './decorators/user-payload.decorator';
 import { Roles } from './decorators/user-role.decorator';
-import { UserRoleEnum } from 'src/utils/enums';
+import { UserRole } from 'src/utils/enums';
 import { AuthRolesGuard } from '../auth/guards/auth-roles.guard';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -29,7 +29,7 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
-  @Roles(UserRoleEnum.ADMIN)
+  @Roles(UserRole.ADMIN)
   @UseGuards(AuthRolesGuard)
   getAllUsers() {
     return this.userService.getAll();

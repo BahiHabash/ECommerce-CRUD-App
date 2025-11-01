@@ -7,16 +7,19 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { MoreThan, Repository } from 'typeorm';
 import { User } from 'src/user/user.entity';
 import { LoginDto } from 'src/auth/dtos/login.dto';
 import { RegisterDto } from 'src/auth/dtos/register.dto';
 import { PASSWORD_HASH_SALT_ROUNDS } from 'src/utils/constant';
-import { AuthResponseDto, JWTPayloadType } from 'src/utils/types';
-import { jwtTypeEnum, UserRoleEnum } from 'src/utils/enums';
+import { RefreshAccessTokens, JWTPayloadType } from 'src/utils/types';
+import { JWTType, TokenPurpose, UserRole } from 'src/utils/enums';
 import { UserService } from 'src/user/user.service';
 import { RefreshTokenDto } from './dtos/refresh.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { randomBytes } from 'node:crypto';
+import { UserToken } from './user-token.entity';
+import type { UserTokenDto } from './dtos/user-token.dto';
 
 /**
  * Service responsible for handling all user authentication logic,
@@ -27,7 +30,7 @@ export class AuthService {
   /**
    * Initializes the AuthService with required dependencies.
    *
-   * @param userRepository Injected TypeORM repository for the User entity.
+   * @param userRepo Injected TypeORM repository for the User entity.
    * @param configService Injected ConfigService for accessing environment variables.
    * @param userService Injected UserService for user-related business logic.
    * @param jwtService Injected JwtService for creating and verifying JSON Web Tokens.
@@ -35,7 +38,9 @@ export class AuthService {
    */
   constructor(
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    private readonly userRepo: Repository<User>,
+    @InjectRepository(UserToken)
+    private readonly userTokenRepo: Repository<UserToken>,
     private readonly configService: ConfigService,
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
@@ -45,17 +50,17 @@ export class AuthService {
   /**
    * Creates a new user account.
    * Checks if a user with the same email already exists, hashes the password,
-   * saves the new user to the database, and returns a new set of tokens.
+   * saves the new user, creates a verification token, and fires an event to send the verification email.
    *
    * @param registerDto Data for creating the new user (e.g., email, password, name).
-   * @returns {Promise<AuthResponseDto>} An object containing the `accessToken` and `refreshToken`.
+   * @returns {Promise<string>} return user created message and call for email verification.
    * @throws {BadRequestException} If a user with the provided email already exists.
    */
-  async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
+  async register(registerDto: RegisterDto) {
     const { password, ...userData } = registerDto;
 
     // 1. Check for existing user
-    const existingUser = await this.userRepository.findOne({
+    const existingUser = await this.userRepo.findOne({
       where: { email: userData.email },
     });
 
@@ -65,18 +70,15 @@ export class AuthService {
       );
     }
 
-    const newUser = this.userRepository.create({
+    // 2. Save user to DB
+    const newUser: User = this.userRepo.create({
       ...userData,
       passwordHash: await this.hashPassword(password),
     });
+    await this.userRepo.save(newUser);
 
-    // save user to DB
-    const savedUser: User | null = await this.userRepository.save(newUser);
-
-    // fire event to (send email)
-    this.eventEmitter.emit('user.registered', newUser.email);
-
-    return await this.generateRefreshAccessTokens(savedUser.id, savedUser.role);
+    // generate email verification token and send it
+    await this.handleUserEmailVerification(newUser);
   }
 
   /**
@@ -84,12 +86,12 @@ export class AuthService {
    * Finds the user by email and validates their password.
    *
    * @param loginDto User login credentials (email and password).
-   * @returns {Promise<AuthResponseDto>} An object containing the `accessToken` and `refreshToken`.
+   * @returns {Promise<RefreshAccessTokens>} An object containing the `accessToken` and `refreshToken`.
    * @throws {BadRequestException} If the email is not found or the password does not match.
    */
-  async login(loginDto: LoginDto): Promise<AuthResponseDto> {
+  async login(loginDto: LoginDto): Promise<RefreshAccessTokens> {
     const { email, password } = loginDto;
-    const user: User | null = await this.userRepository.findOne({
+    const user: User | null = await this.userRepo.findOne({
       where: { email },
       select: ['passwordHash', 'id', 'role'],
     });
@@ -104,17 +106,66 @@ export class AuthService {
   }
 
   /**
+   * Verifies a user's email via a token.
+   * If the token is valid, it marks the user as verified,
+   * issues new auth tokens, and deletes the verification token.
+   *
+   * @param token The email verification token from the URL.
+   * @returns {Promise<RefreshAccessTokens>} An object with new tokens.
+   * @throws {UnauthorizedException} If the token is invalid or expired.
+   */
+  async verifyEmail(token: string): Promise<RefreshAccessTokens> {
+    const userToken: UserToken | null = await this.userTokenRepo.findOne({
+      where: {
+        token: token,
+        purpose: TokenPurpose.EMAIL_VERIFICATION,
+        expiresAt: MoreThan(new Date()),
+      },
+      relations: ['user'], // Load the user in the same query
+    });
+
+    if (!userToken) {
+      throw new UnauthorizedException('Invalid or expired token');
+    }
+
+    // Mark and save user as verified
+    userToken.user.isAccountVerified = true;
+    const user: User = await this.userRepo.save(userToken.user);
+
+    // Delete the single-use verification token
+    await this.userTokenRepo.remove(userToken);
+
+    // Return new tokens for an immediate log-in experience
+    return this.generateRefreshAccessTokens(user.id, user.role);
+  }
+
+  /**
+   * Resend Email Verification Token to User Email
+   * check for user and if existed and not verified generate, save and send token via email
+   * @param userPayload jwt user payload
+   */
+  async resendVerificationEmail(userPayload: JWTPayloadType) {
+    const user: User = await this.userService.getOne(userPayload.userId);
+
+    if (user.isAccountVerified) {
+      throw new BadRequestException('User is Already Verified');
+    }
+
+    await this.handleUserEmailVerification(user);
+  }
+
+  /**
    * Generates a new access token and a new rotated refresh token.
    * This method validates the provided refresh token, verifies the user still exists,
    * and then issues a fresh pair of tokens.
    *
    * @param refreshTokenDto An object containing the existing JWT refresh token.
-   * @returns {Promise<AuthResponseDto>} An object containing the new `accessToken` and `refreshToken`.
+   * @returns {Promise<RefreshAccessTokens>} An object containing the new `accessToken` and `refreshToken`.
    * @throws {UnauthorizedException} If the refresh token is invalid or expired.
    */
   async refreshTokens(
     refreshTokenDto: RefreshTokenDto,
-  ): Promise<AuthResponseDto> {
+  ): Promise<RefreshAccessTokens> {
     // verify refresh token
     let payload: JWTPayloadType;
     try {
@@ -177,12 +228,12 @@ export class AuthService {
    *
    * @param userId The core userId to include in the JWTs.
    * @param role The core userRole to include in the JWTs.
-   * @returns {Promise<AuthResponseDto>} An object containing the new `accessToken` and `refreshToken`.
+   * @returns {Promise<RefreshAccessTokens>} An object containing the new `accessToken` and `refreshToken`.
    */
   private async generateRefreshAccessTokens(
     userId: number,
-    role: UserRoleEnum,
-  ): Promise<AuthResponseDto> {
+    role: UserRole,
+  ): Promise<RefreshAccessTokens> {
     const payload = {
       userId,
       role,
@@ -190,7 +241,7 @@ export class AuthService {
 
     // generating access token
     const accessToken = await this.jwtService.signAsync(
-      { ...payload, jwtType: jwtTypeEnum.ACCESS },
+      { ...payload, jwtType: JWTType.ACCESS },
       {
         secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
         expiresIn: this.configService.get('JWT_ACCESS_EXPIRES_IN'),
@@ -199,7 +250,7 @@ export class AuthService {
 
     // generating refresh token
     const refreshToken = await this.jwtService.signAsync(
-      { ...payload, jwtType: jwtTypeEnum.REFRESH },
+      { ...payload, jwtType: JWTType.REFRESH },
       {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
         expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN'),
@@ -207,5 +258,68 @@ export class AuthService {
     );
 
     return { accessToken, refreshToken };
+  }
+
+  /**
+   * Generate and save user's email verification token.
+   * Trigger to sendEmailVerification event
+   * @param user The User that email verification token belongs to.
+   * @returns {void}.
+   */
+  private async handleUserEmailVerification(user: User) {
+    // Generate verification token and URL
+    const { url, token } = this.generateVerificationLink('verify-email');
+
+    // Create and validate the UserToken DTO
+    const expiryTimeMs =
+      Number(this.configService.get<number>('VERIFICATION_TOKEN_EXPIRES_IN')) ||
+      15 * 60 * 1000; // 15 minutes
+    const expiresAt = new Date(Date.now() + expiryTimeMs);
+    const userTokenDto: UserTokenDto = {
+      token: token,
+      purpose: TokenPurpose.EMAIL_VERIFICATION,
+      userId: user.id,
+      expiresAt: expiresAt,
+    };
+
+    // 5. Save the token
+    const userToken: UserToken = this.userTokenRepo.create(userTokenDto);
+    await this.userTokenRepo.save(userToken);
+
+    // 6. Fire event to (send email for verification)
+    this.eventEmitter.emit('user.sendEmailVerification', {
+      url,
+      email: user.email,
+      username: user.username,
+    });
+  }
+
+  /**
+   * @private
+   * Generates a secure token and constructs its full verification URL.
+   *
+   * This helper is generic and can be used for:
+   * - Email verification, Password reset or other token-based verification
+   *
+   * @param {string} route - The specific API route (e.g., 'verify-email', 'reset-password').
+   * @returns {{ token: string, url: string }} An object containing:
+   * - `token`: The raw token string (to be saved in the database).
+   * - `url`: The full URL (to be sent in an email).
+   */
+  private generateVerificationLink(route: string): {
+    token: string;
+    url: string;
+  } {
+    const token: string = randomBytes(32).toString('hex');
+
+    const baseUrl: string = this.configService.get<string>(
+      'BASE_URL',
+      'http://localhost:5050',
+    );
+
+    // e.g: http://localhost:3000/api/auth/verify-email?token=...
+    const url: string = `${baseUrl}/api/auth/${route}?token=${token}`;
+
+    return { token, url };
   }
 }

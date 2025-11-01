@@ -1,5 +1,4 @@
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
-import { AppService } from './app.service';
 import { UserModule } from './user/user.module';
 import { ReviewModule } from './review/review.module';
 import { ProductModule } from './product/product.module';
@@ -15,6 +14,7 @@ import { UserSubscriber } from './subscriber/user.subscriber';
 import { UploadsModule } from './uploads/uploads.module';
 import { MailModule } from './mail/mail.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { UserToken } from './auth/user-token.entity';
 
 @Module({
   imports: [
@@ -47,7 +47,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
           port: config.get<number>('DB_PORT'),
           host: config.get<string>('DB_HOST', 'localhost'),
           synchronize: process.env.NODE_ENV !== 'production', // true in Dev onllllly because it doesn't make migration
-          entities: [User, Review, Product],
+          entities: [User, Review, Product, UserToken],
           subscribers: [UserSubscriber],
         };
       },
@@ -63,7 +63,6 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
   ],
 
   providers: [
-    AppService,
     {
       provide: APP_INTERCEPTOR,
       useClass: ClassSerializerInterceptor,

@@ -5,11 +5,16 @@ import { User } from 'src/user/user.entity';
 import { UserModule } from 'src/user/user.module';
 import { AuthController } from './auth.controller';
 import { MailModule } from 'src/mail/mail.module';
+import { UserToken } from './user-token.entity';
 
 @Module({
   controllers: [AuthController],
   providers: [AuthService],
   exports: [AuthService],
-  imports: [TypeOrmModule.forFeature([User]), UserModule, MailModule],
+  imports: [
+    TypeOrmModule.forFeature([User, UserToken]),
+    UserModule,
+    MailModule,
+  ],
 })
 export class AuthModule {}

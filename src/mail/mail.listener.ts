@@ -2,35 +2,45 @@ import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { MailService } from './mail.service';
 
+interface UserRegisteredPayload {
+  url: string;
+  email: string;
+  username: string;
+}
+
 @Injectable()
 export class MailListener {
   constructor(private readonly mailService: MailService) {}
 
   @OnEvent('user.registered', { async: true })
-  async handleUserRegisteredEvent(email: string) {
+  async handleUserRegisteredEvent(payload: UserRegisteredPayload) {
+    const { email, username, url } = payload;
     try {
-      console.log(
-        `${new Date().toTimeString()} User-Registerd-Event catched for email: ${email}`,
-      );
-      await this.mailService.sendWelcomeMessage(email);
+      await this.mailService.sendWelcomeMessage(email, username, url);
       console.log(
         `${new Date().toTimeString()} Registeration Email sent to: ${email}`,
       );
     } catch (err) {
       console.error(
         `${new Date().toTimeString()} User-Registerd-Event failed to send mail to: ${email}`,
+        err,
       );
-      console.error(`Error: ${err}`);
     }
   }
 
-  @OnEvent('user.loggedin', { async: true })
-  async handleUserLoggedinEvent(email: string) {
-    console.log('Event Emitter for email: ', email);
+  @OnEvent('user.sendEmailVerification', { async: true })
+  async handlesendEmailVerificationdEvent(payload: UserRegisteredPayload) {
+    const { email, username, url } = payload;
     try {
-      await this.mailService.sendWelcomeMessage(email);
-    } catch {
-      console.error('Faile to send email to : ', email);
+      await this.mailService.sendWelcomeMessage(email, username, url);
+      console.log(
+        `${new Date().toTimeString()} Registeration Email sent to: ${email}`,
+      );
+    } catch (err) {
+      console.error(
+        `${new Date().toTimeString()} User-Registerd-Event failed to send mail to: ${email}`,
+        err,
+      );
     }
   }
 }

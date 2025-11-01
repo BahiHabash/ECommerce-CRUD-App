@@ -9,7 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { join } from 'node:path';
 import { promises as fsPromises } from 'node:fs';
 import { User } from './user.entity';
-import { UserRoleEnum } from 'src/utils/enums';
+import { UserRole } from 'src/utils/enums';
 import { JWTPayloadType } from 'src/utils/types';
 import type { UpdateUserDto } from './dtos/update-user.dto';
 import type { Response } from 'express';
@@ -20,7 +20,7 @@ import { UPLOADS_FOLDER_USER_PROFILE } from 'src/utils/constant';
 export class UserService {
   constructor(
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    private readonly userRepo: Repository<User>,
   ) {}
 
   /**
@@ -29,7 +29,7 @@ export class UserService {
    * @returns A promise that resolves to an array of users.
    */
   async getAll(): Promise<User[]> {
-    return await this.userRepository.find();
+    return await this.userRepo.find();
   }
 
   /**
@@ -40,7 +40,7 @@ export class UserService {
    * @returns A promise that resolves to the user entity.
    */
   async getOne(id: number): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { id } });
+    const user = await this.userRepo.findOne({ where: { id } });
 
     if (!user) throw new NotFoundException('User not found.');
 
@@ -56,11 +56,11 @@ export class UserService {
    * @returns A promise that resolves to the updated user entity.
    */
   async update(id: number, dto: UpdateUserDto): Promise<User> {
-    const user = await this.userRepository.preload({ id, ...dto });
+    const user = await this.userRepo.preload({ id, ...dto });
 
     if (!user) throw new NotFoundException(`User with ID ${id} not found.`);
 
-    return await this.userRepository.save(user);
+    return await this.userRepo.save(user);
   }
 
   /**
@@ -73,10 +73,7 @@ export class UserService {
    * @returns A promise that resolves when the user has been successfully deleted.
    */
   async delete(targetUserId: number, payload: JWTPayloadType): Promise<void> {
-    if (
-      payload.role !== UserRoleEnum.ADMIN &&
-      payload.userId !== targetUserId
-    ) {
+    if (payload.role !== UserRole.ADMIN && payload.userId !== targetUserId) {
       throw new ForbiddenException(
         'You are not allowed to perform this action.',
       );
@@ -90,7 +87,7 @@ export class UserService {
     if (user.profileImage)
       await this.removeProfileImageFromSystem(user.profileImage);
 
-    await this.userRepository.remove(user);
+    await this.userRepo.remove(user);
   }
 
   /**
@@ -114,7 +111,7 @@ export class UserService {
 
     user.profileImage = newProfileImage;
 
-    return await this.userRepository.save(user);
+    return await this.userRepo.save(user);
   }
 
   /**
@@ -168,7 +165,7 @@ export class UserService {
 
     user.profileImage = null;
 
-    return await this.userRepository.save(user);
+    return await this.userRepo.save(user);
   }
 
   /**
