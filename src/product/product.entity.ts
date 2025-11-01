@@ -6,8 +6,8 @@ import {
   UpdateDateColumn,
   OneToMany,
   ManyToOne,
+  JoinColumn,
 } from 'typeorm';
-import { CURRENT_TIMESTAMP } from '../utils/constant';
 import { Review } from '../review/review.entity';
 import { User } from '../user/user.entity';
 
@@ -25,22 +25,22 @@ export class Product {
   @Column({ type: 'float' })
   price: number;
 
-  @CreateDateColumn({ type: 'timestamp', default: () => CURRENT_TIMESTAMP })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({
-    type: 'timestamp',
-    default: () => CURRENT_TIMESTAMP,
-    onUpdate: CURRENT_TIMESTAMP,
-  })
+  @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToMany(() => Review, (review) => review.product, { eager: true })
+  @OneToMany(() => Review, (review) => review.product)
   reviews: Review[];
 
   @ManyToOne(() => User, (user) => user.products, {
-    eager: true,
     onDelete: 'CASCADE',
+    nullable: false, // A product must have a user
   })
+  @JoinColumn({ name: 'userId' })
   user: User;
+
+  @Column()
+  userId: number;
 }

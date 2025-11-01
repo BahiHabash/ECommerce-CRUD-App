@@ -5,8 +5,8 @@ import {
   ManyToOne,
   CreateDateColumn,
   UpdateDateColumn,
+  JoinColumn,
 } from 'typeorm';
-import { CURRENT_TIMESTAMP } from '../utils/constant';
 import { Product } from '../product/product.entity';
 import { User } from '../user/user.entity';
 
@@ -21,21 +21,29 @@ export class Review {
   @Column()
   comment: string;
 
-  @CreateDateColumn({ type: 'timestamp', default: () => CURRENT_TIMESTAMP })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({
-    type: 'timestamp',
-    default: () => CURRENT_TIMESTAMP,
-    onUpdate: CURRENT_TIMESTAMP,
-  })
+  @UpdateDateColumn()
   updatedAt: Date;
 
   @ManyToOne(() => Product, (product) => product.reviews, {
     onDelete: 'CASCADE',
+    nullable: false,
   })
+  @JoinColumn({ name: 'productId' }) // Define the foreign key column
   product: Product;
 
-  @ManyToOne(() => User, (user) => user.reviews, { onDelete: 'CASCADE' })
+  @Column() // Expose the foreign key for easy queries
+  productId: number;
+
+  @ManyToOne(() => User, (user) => user.reviews, {
+    onDelete: 'CASCADE',
+    nullable: false,
+  })
+  @JoinColumn({ name: 'userId' }) // Define the foreign key column
   user: User;
+
+  @Column() // Expose the foreign key for easy queries
+  userId: number;
 }

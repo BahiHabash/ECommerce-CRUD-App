@@ -6,11 +6,11 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
-import { CURRENT_TIMESTAMP } from '../utils/constant';
 import { Product } from '../product/product.entity';
 import { Review } from '../review/review.entity';
-import { UserRoleEnum } from 'src/utils/enums';
+import { UserRole } from 'src/utils/enums';
 import { Exclude } from 'class-transformer';
+import { UserToken } from 'src/auth/user-token.entity';
 
 @Entity({ name: 'users' })
 export class User {
@@ -29,22 +29,23 @@ export class User {
 
   @Column({
     type: 'enum',
-    enum: UserRoleEnum,
-    default: UserRoleEnum.NORMAL_USER,
+    enum: UserRole,
+    default: UserRole.NORMAL_USER,
   })
-  role: UserRoleEnum;
+  role: UserRole;
 
   @Column({ type: 'varchar', nullable: true, default: null })
   profileImage: string | null;
 
+  // Its value is managed automatically by the UserSubscriber.
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  lastSecurityUpdate: Date;
+
   @Column({ default: false })
   isAccountVerified: boolean;
 
-  /**
-   * Its value is managed automatically by the UserSubscriber.
-   */
-  @Column({ type: 'timestamp', default: () => CURRENT_TIMESTAMP })
-  lastSecurityUpdate: Date;
+  @OneToMany(() => UserToken, (token) => token.user)
+  tokens: UserToken[];
 
   @OneToMany(() => Product, (product) => product.user)
   products: Product[];
@@ -52,13 +53,9 @@ export class User {
   @OneToMany(() => Review, (review) => review.user)
   reviews: Review[];
 
-  @CreateDateColumn({ type: 'timestamp', default: () => CURRENT_TIMESTAMP })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({
-    type: 'timestamp',
-    default: () => CURRENT_TIMESTAMP,
-    onUpdate: CURRENT_TIMESTAMP,
-  })
+  @UpdateDateColumn()
   updatedAt: Date;
 }
