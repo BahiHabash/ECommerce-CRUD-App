@@ -8,17 +8,8 @@ export class MailService {
     private readonly mailerService: MailerService,
     private readonly configService: ConfigService,
   ) {}
-  async sendEmail(userEmail: string): Promise<boolean> {
-    await this.mailerService.sendMail({
-      to: userEmail,
-      from: this.configService.get<string>('EMAIL_SENDER'),
-      subject: 'Test',
-      html: `<p> <h1> Hello </h1> </p>`,
-    });
-    return true;
-  }
 
-  async sendWelcomeMessage(
+  async sendVerificationEmail(
     email: string,
     username: string,
     url: string,
@@ -28,7 +19,7 @@ export class MailService {
       to: email,
       from: this.configService.get<string>('EMAIL_FROM'),
       subject: `Welcome to ECommerce! Please Verify Your Email`,
-      template: './register-email.template.ejs',
+      template: './verify-email.template.ejs',
       context: {
         username: username,
         verificationUrl: url,

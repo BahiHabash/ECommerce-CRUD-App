@@ -287,7 +287,7 @@ export class AuthService {
     await this.userTokenRepo.save(userToken);
 
     // 6. Fire event to (send email for verification)
-    this.eventEmitter.emit('user.sendEmailVerification', {
+    this.eventEmitter.emit('user.verificationEmail', {
       url,
       email: user.email,
       username: user.username,
